@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { ArrowRight, Upload, Camera, AlertTriangle, Leaf, Bug } from "lucide-react";
+import { ArrowRight, Upload, Camera, AlertTriangle, Leaf, Bug, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
 
@@ -66,19 +68,106 @@ const diseases = [
   },
 ];
 
+interface DiagnosisResult {
+  diagnosis: string;
+}
+
 const PestsPage = () => {
   const [selectedDisease, setSelectedDisease] = useState<typeof diseases[0] | null>(null);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [diagnosisResult, setDiagnosisResult] = useState<string | null>(null);
+  const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
+  const { toast } = useToast();
 
-  const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      // Check file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast({
+          title: "حجم الصورة كبير جداً",
+          description: "يرجى اختيار صورة أقل من 5 ميجابايت",
+          variant: "destructive",
+        });
+        return;
+      }
+
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result as string);
+      reader.onloadend = async () => {
+        const base64Image = reader.result as string;
+        setUploadedImage(base64Image);
+        setDiagnosisResult(null);
+        setDiagnosisError(null);
+        
+        // Start AI analysis
+        await analyzePest(base64Image);
       };
       reader.readAsDataURL(file);
     }
+  };
+
+  const analyzePest = async (imageBase64: string) => {
+    setIsAnalyzing(true);
+    setDiagnosisError(null);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('diagnose-pest', {
+        body: { imageBase64 }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setDiagnosisResult(data.diagnosis);
+      toast({
+        title: "تم التشخيص بنجاح",
+        description: "تم تحليل الصورة وتحديد المشكلة",
+      });
+    } catch (error) {
+      console.error("Error analyzing pest:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء التحليل";
+      setDiagnosisError(errorMessage);
+      toast({
+        title: "خطأ في التشخيص",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const resetUpload = () => {
+    setUploadedImage(null);
+    setDiagnosisResult(null);
+    setDiagnosisError(null);
+  };
+
+  const formatDiagnosis = (text: string) => {
+    // Split by numbered points or newlines and format
+    return text.split(/\n/).map((line, index) => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) return null;
+      
+      // Check if it's a numbered point
+      const isNumberedPoint = /^\d+\./.test(trimmedLine);
+      const isBoldTitle = /^[*#]+/.test(trimmedLine) || trimmedLine.endsWith(':');
+      
+      return (
+        <p 
+          key={index} 
+          className={`mb-2 ${isNumberedPoint ? 'pr-4' : ''} ${isBoldTitle ? 'font-bold text-foreground' : 'text-muted-foreground'}`}
+        >
+          {trimmedLine.replace(/^[*#]+\s*/, '').replace(/\*+/g, '')}
+        </p>
+      );
+    });
   };
 
   return (
@@ -92,7 +181,7 @@ const PestsPage = () => {
           </button>
           <div>
             <h1 className="text-2xl font-bold text-foreground">الأمراض والآفات</h1>
-            <p className="text-muted-foreground text-sm">تشخيص وعلاج مشاكل المحاصيل</p>
+            <p className="text-muted-foreground text-sm">تشخيص وعلاج مشاكل المحاصيل بالذكاء الاصطناعي</p>
           </div>
         </div>
 
@@ -103,33 +192,81 @@ const PestsPage = () => {
               <Camera className="w-6 h-6 text-warning-foreground" />
             </div>
             <div>
-              <h3 className="font-bold text-foreground">تشخيص بالصورة</h3>
-              <p className="text-sm text-muted-foreground">ارفع صورة لمحصولك لتحديد المشكلة</p>
+              <h3 className="font-bold text-foreground">تشخيص ذكي بالصورة</h3>
+              <p className="text-sm text-muted-foreground">ارفع صورة لمحصولك وسيقوم الذكاء الاصطناعي بتشخيص المشكلة</p>
             </div>
           </div>
 
           {uploadedImage ? (
-            <div className="relative rounded-xl overflow-hidden">
-              <img src={uploadedImage} alt="محصول مرفوع" className="w-full h-48 object-cover" />
-              <div className="absolute inset-0 bg-foreground/50 flex items-center justify-center">
-                <div className="bg-card rounded-xl p-4 text-center">
-                  <AlertTriangle className="w-8 h-8 text-warning mx-auto mb-2" />
-                  <p className="font-bold text-foreground">جاري التحليل...</p>
-                  <p className="text-sm text-muted-foreground">سيتم تحديد المشكلة قريباً</p>
-                </div>
+            <div className="space-y-4">
+              {/* Uploaded Image */}
+              <div className="relative rounded-xl overflow-hidden">
+                <img src={uploadedImage} alt="محصول مرفوع" className="w-full h-48 object-cover" />
+                <button
+                  onClick={resetUpload}
+                  className="absolute top-2 left-2 p-2 bg-card rounded-full shadow-lg hover:bg-muted transition-colors"
+                  aria-label="إزالة الصورة"
+                >
+                  <XCircle className="w-5 h-5 text-destructive" />
+                </button>
               </div>
-              <button
-                onClick={() => setUploadedImage(null)}
-                className="absolute top-2 left-2 p-2 bg-card rounded-full"
-              >
-                ×
-              </button>
+
+              {/* Analysis Status */}
+              {isAnalyzing && (
+                <div className="flex items-center justify-center gap-3 p-6 bg-primary/10 rounded-xl">
+                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                  <div className="text-center">
+                    <p className="font-bold text-foreground">جاري التحليل...</p>
+                    <p className="text-sm text-muted-foreground">يتم تشخيص المشكلة بواسطة الذكاء الاصطناعي</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Diagnosis Result */}
+              {diagnosisResult && (
+                <div className="card-agricultural !p-5 border-r-4 border-r-green-500 animate-fade-in">
+                  <div className="flex items-center gap-2 mb-4">
+                    <CheckCircle className="w-6 h-6 text-green-600" />
+                    <h4 className="font-bold text-foreground text-lg">نتيجة التشخيص</h4>
+                  </div>
+                  <div className="prose prose-sm max-w-none text-right">
+                    {formatDiagnosis(diagnosisResult)}
+                  </div>
+                </div>
+              )}
+
+              {/* Diagnosis Error */}
+              {diagnosisError && (
+                <div className="card-agricultural !p-5 border-r-4 border-r-red-500">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="w-6 h-6 text-destructive" />
+                    <h4 className="font-bold text-foreground">خطأ في التشخيص</h4>
+                  </div>
+                  <p className="text-sm text-muted-foreground">{diagnosisError}</p>
+                  <button 
+                    onClick={() => analyzePest(uploadedImage)}
+                    className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    إعادة المحاولة
+                  </button>
+                </div>
+              )}
+
+              {/* New Upload Button */}
+              {!isAnalyzing && (diagnosisResult || diagnosisError) && (
+                <button
+                  onClick={resetUpload}
+                  className="w-full py-3 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                >
+                  رفع صورة جديدة
+                </button>
+              )}
             </div>
           ) : (
             <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-8 cursor-pointer hover:border-primary transition-colors">
               <Upload className="w-10 h-10 text-muted-foreground mb-3" />
               <p className="font-medium text-foreground">اضغط لرفع صورة</p>
-              <p className="text-sm text-muted-foreground">أو اسحب الصورة هنا</p>
+              <p className="text-sm text-muted-foreground">JPG, PNG (حد أقصى 5MB)</p>
               <input
                 type="file"
                 accept="image/*"
