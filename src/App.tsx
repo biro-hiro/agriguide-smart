@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import OnboardingRedirect from "./components/OnboardingRedirect";
+import OnboardingPage from "./pages/OnboardingPage";
 import Index from "./pages/Index";
 import CropsPage from "./pages/CropsPage";
 import PestsPage from "./pages/PestsPage";
@@ -21,19 +23,22 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/crops" element={<CropsPage />} />
-          <Route path="/pests" element={<PestsPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
-          <Route path="/community" element={<CommunityPage />} />
-          <Route path="/hybrid" element={<HybridPage />} />
-          <Route path="/tools" element={<ToolsPage />} />
-          <Route path="/environment" element={<EnvironmentPage />} />
-          <Route path="/tips" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        <OnboardingRedirect>
+          <Routes>
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/" element={<Index />} />
+            <Route path="/crops" element={<CropsPage />} />
+            <Route path="/pests" element={<PestsPage />} />
+            <Route path="/calendar" element={<CalendarPage />} />
+            <Route path="/community" element={<CommunityPage />} />
+            <Route path="/hybrid" element={<HybridPage />} />
+            <Route path="/tools" element={<ToolsPage />} />
+            <Route path="/environment" element={<EnvironmentPage />} />
+            <Route path="/tips" element={<Index />} />
+            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </OnboardingRedirect>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
