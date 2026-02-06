@@ -1,9 +1,13 @@
 import { useState } from "react";
-import { ArrowRight, Upload, Camera, AlertTriangle, Leaf, Bug, Loader2, CheckCircle, XCircle } from "lucide-react";
+import { ArrowRight, Upload, Camera, AlertTriangle, Leaf, Bug, Loader2, CheckCircle, XCircle, MessageSquare, Send } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 const diseases = [
   {
@@ -68,6 +72,17 @@ const diseases = [
   },
 ];
 
+const commonSymptoms = [
+  "اصفرار الأوراق",
+  "ذبول النبات",
+  "بقع بنية على الأوراق",
+  "تجعد الأوراق",
+  "إنتاج ضعيف",
+  "تساقط الأزهار",
+  "تعفن الثمار",
+  "حشرات على النبات",
+];
+
 interface DiagnosisResult {
   diagnosis: string;
 }
@@ -79,6 +94,13 @@ const PestsPage = () => {
   const [diagnosisResult, setDiagnosisResult] = useState<string | null>(null);
   const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
   const { toast } = useToast();
+
+  // Symptoms-based diagnosis state
+  const [symptoms, setSymptoms] = useState("");
+  const [cropName, setCropName] = useState("");
+  const [isAnalyzingSymptoms, setIsAnalyzingSymptoms] = useState(false);
+  const [symptomsDiagnosis, setSymptomsDiagnosis] = useState<string | null>(null);
+  const [symptomsError, setSymptomsError] = useState<string | null>(null);
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -149,6 +171,64 @@ const PestsPage = () => {
     setDiagnosisError(null);
   };
 
+  const analyzeSymptoms = async () => {
+    if (!symptoms.trim()) {
+      toast({
+        title: "يرجى إدخال الأعراض",
+        description: "اكتب الأعراض التي تلاحظها على محصولك",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsAnalyzingSymptoms(true);
+    setSymptomsError(null);
+    setSymptomsDiagnosis(null);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('diagnose-symptoms', {
+        body: { symptoms, cropName: cropName.trim() || undefined }
+      });
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      setSymptomsDiagnosis(data.diagnosis);
+      toast({
+        title: "تم التشخيص بنجاح",
+        description: "تم تحليل الأعراض وتقديم التوصيات",
+      });
+    } catch (error) {
+      console.error("Error analyzing symptoms:", error);
+      const errorMessage = error instanceof Error ? error.message : "حدث خطأ أثناء التحليل";
+      setSymptomsError(errorMessage);
+      toast({
+        title: "خطأ في التشخيص",
+        description: errorMessage,
+        variant: "destructive",
+      });
+    } finally {
+      setIsAnalyzingSymptoms(false);
+    }
+  };
+
+  const addSymptom = (symptom: string) => {
+    if (symptoms.includes(symptom)) return;
+    setSymptoms(prev => prev ? `${prev}، ${symptom}` : symptom);
+  };
+
+  const resetSymptomsDiagnosis = () => {
+    setSymptoms("");
+    setCropName("");
+    setSymptomsDiagnosis(null);
+    setSymptomsError(null);
+  };
+
   const formatDiagnosis = (text: string) => {
     // Split by numbered points or newlines and format
     return text.split(/\n/).map((line, index) => {
@@ -185,97 +265,251 @@ const PestsPage = () => {
           </div>
         </div>
 
-        {/* Image Upload Section */}
-        <div className="card-agricultural mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="section-icon !w-12 !h-12 gradient-sunset">
-              <Camera className="w-6 h-6 text-warning-foreground" />
-            </div>
-            <div>
-              <h3 className="font-bold text-foreground">تشخيص ذكي بالصورة</h3>
-              <p className="text-sm text-muted-foreground">ارفع صورة لمحصولك وسيقوم الذكاء الاصطناعي بتشخيص المشكلة</p>
-            </div>
-          </div>
+        {/* Diagnosis Tabs */}
+        <Tabs defaultValue="symptoms" className="mb-6">
+          <TabsList className="grid w-full grid-cols-2 mb-4">
+            <TabsTrigger value="symptoms" className="gap-2">
+              <MessageSquare className="w-4 h-4" />
+              تشخيص بالأعراض
+            </TabsTrigger>
+            <TabsTrigger value="image" className="gap-2">
+              <Camera className="w-4 h-4" />
+              تشخيص بالصورة
+            </TabsTrigger>
+          </TabsList>
 
-          {uploadedImage ? (
-            <div className="space-y-4">
-              {/* Uploaded Image */}
-              <div className="relative rounded-xl overflow-hidden">
-                <img src={uploadedImage} alt="محصول مرفوع" className="w-full h-48 object-cover" />
-                <button
-                  onClick={resetUpload}
-                  className="absolute top-2 left-2 p-2 bg-card rounded-full shadow-lg hover:bg-muted transition-colors"
-                  aria-label="إزالة الصورة"
-                >
-                  <XCircle className="w-5 h-5 text-destructive" />
-                </button>
+          {/* Symptoms-based Diagnosis Tab */}
+          <TabsContent value="symptoms">
+            <div className="card-agricultural">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="section-icon !w-12 !h-12 gradient-primary">
+                  <MessageSquare className="w-6 h-6 text-primary-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">تشخيص ذكي بالأعراض</h3>
+                  <p className="text-sm text-muted-foreground">صف الأعراض التي تلاحظها وسيقوم الذكاء الاصطناعي بتشخيص المشكلة</p>
+                </div>
               </div>
 
-              {/* Analysis Status */}
-              {isAnalyzing && (
-                <div className="flex items-center justify-center gap-3 p-6 bg-primary/10 rounded-xl">
-                  <Loader2 className="w-6 h-6 text-primary animate-spin" />
-                  <div className="text-center">
-                    <p className="font-bold text-foreground">جاري التحليل...</p>
-                    <p className="text-sm text-muted-foreground">يتم تشخيص المشكلة بواسطة الذكاء الاصطناعي</p>
+              {!symptomsDiagnosis ? (
+                <div className="space-y-4">
+                  {/* Crop Name Input */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      اسم المحصول (اختياري)
+                    </label>
+                    <Input
+                      placeholder="مثال: طماطم، خيار، قمح..."
+                      value={cropName}
+                      onChange={(e) => setCropName(e.target.value)}
+                      className="text-right"
+                    />
                   </div>
+
+                  {/* Symptoms Textarea */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      الأعراض الملاحظة *
+                    </label>
+                    <Textarea
+                      placeholder="صف الأعراض التي تلاحظها على محصولك...&#10;مثال: أوراق صفراء، بقع بنية، ذبول، حشرات صغيرة..."
+                      value={symptoms}
+                      onChange={(e) => setSymptoms(e.target.value)}
+                      className="min-h-[120px] text-right"
+                    />
+                  </div>
+
+                  {/* Quick Symptoms */}
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      أعراض شائعة (اضغط للإضافة)
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {commonSymptoms.map((symptom) => (
+                        <button
+                          key={symptom}
+                          onClick={() => addSymptom(symptom)}
+                          className={`text-sm px-3 py-1.5 rounded-full border transition-colors ${
+                            symptoms.includes(symptom)
+                              ? 'bg-primary text-primary-foreground border-primary'
+                              : 'bg-muted text-muted-foreground border-border hover:border-primary'
+                          }`}
+                        >
+                          {symptom}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Analyze Button */}
+                  <Button
+                    onClick={analyzeSymptoms}
+                    disabled={isAnalyzingSymptoms || !symptoms.trim()}
+                    className="w-full gap-2"
+                  >
+                    {isAnalyzingSymptoms ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        جاري التحليل...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-5 h-5" />
+                        تشخيص المشكلة
+                      </>
+                    )}
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* User Input Summary */}
+                  <div className="p-4 bg-muted rounded-xl">
+                    <p className="text-sm text-muted-foreground mb-1">الأعراض المدخلة:</p>
+                    <p className="text-foreground font-medium">{symptoms}</p>
+                    {cropName && (
+                      <>
+                        <p className="text-sm text-muted-foreground mt-2 mb-1">المحصول:</p>
+                        <p className="text-foreground font-medium">{cropName}</p>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Diagnosis Result */}
+                  <div className="card-agricultural !p-5 border-r-4 border-r-green-500 animate-fade-in">
+                    <div className="flex items-center gap-2 mb-4">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <h4 className="font-bold text-foreground text-lg">نتيجة التشخيص</h4>
+                    </div>
+                    <div className="prose prose-sm max-w-none text-right">
+                      {formatDiagnosis(symptomsDiagnosis)}
+                    </div>
+                  </div>
+
+                  {/* New Diagnosis Button */}
+                  <Button
+                    onClick={resetSymptomsDiagnosis}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    تشخيص جديد
+                  </Button>
                 </div>
               )}
 
-              {/* Diagnosis Result */}
-              {diagnosisResult && (
-                <div className="card-agricultural !p-5 border-r-4 border-r-green-500 animate-fade-in">
-                  <div className="flex items-center gap-2 mb-4">
-                    <CheckCircle className="w-6 h-6 text-green-600" />
-                    <h4 className="font-bold text-foreground text-lg">نتيجة التشخيص</h4>
-                  </div>
-                  <div className="prose prose-sm max-w-none text-right">
-                    {formatDiagnosis(diagnosisResult)}
-                  </div>
-                </div>
-              )}
-
-              {/* Diagnosis Error */}
-              {diagnosisError && (
-                <div className="card-agricultural !p-5 border-r-4 border-r-red-500">
+              {/* Symptoms Error */}
+              {symptomsError && (
+                <div className="mt-4 card-agricultural !p-5 border-r-4 border-r-red-500">
                   <div className="flex items-center gap-2 mb-2">
                     <AlertTriangle className="w-6 h-6 text-destructive" />
                     <h4 className="font-bold text-foreground">خطأ في التشخيص</h4>
                   </div>
-                  <p className="text-sm text-muted-foreground">{diagnosisError}</p>
-                  <button 
-                    onClick={() => analyzePest(uploadedImage)}
-                    className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                  <p className="text-sm text-muted-foreground">{symptomsError}</p>
+                  <Button
+                    onClick={analyzeSymptoms}
+                    variant="outline"
+                    className="mt-3"
                   >
                     إعادة المحاولة
-                  </button>
+                  </Button>
                 </div>
               )}
+            </div>
+          </TabsContent>
 
-              {/* New Upload Button */}
-              {!isAnalyzing && (diagnosisResult || diagnosisError) && (
-                <button
-                  onClick={resetUpload}
-                  className="w-full py-3 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                >
-                  رفع صورة جديدة
-                </button>
+          {/* Image-based Diagnosis Tab */}
+          <TabsContent value="image">
+            <div className="card-agricultural">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="section-icon !w-12 !h-12 gradient-sunset">
+                  <Camera className="w-6 h-6 text-warning-foreground" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-foreground">تشخيص ذكي بالصورة</h3>
+                  <p className="text-sm text-muted-foreground">ارفع صورة لمحصولك وسيقوم الذكاء الاصطناعي بتشخيص المشكلة</p>
+                </div>
+              </div>
+
+              {uploadedImage ? (
+                <div className="space-y-4">
+                  {/* Uploaded Image */}
+                  <div className="relative rounded-xl overflow-hidden">
+                    <img src={uploadedImage} alt="محصول مرفوع" className="w-full h-48 object-cover" />
+                    <button
+                      onClick={resetUpload}
+                      className="absolute top-2 left-2 p-2 bg-card rounded-full shadow-lg hover:bg-muted transition-colors"
+                      aria-label="إزالة الصورة"
+                    >
+                      <XCircle className="w-5 h-5 text-destructive" />
+                    </button>
+                  </div>
+
+                  {/* Analysis Status */}
+                  {isAnalyzing && (
+                    <div className="flex items-center justify-center gap-3 p-6 bg-primary/10 rounded-xl">
+                      <Loader2 className="w-6 h-6 text-primary animate-spin" />
+                      <div className="text-center">
+                        <p className="font-bold text-foreground">جاري التحليل...</p>
+                        <p className="text-sm text-muted-foreground">يتم تشخيص المشكلة بواسطة الذكاء الاصطناعي</p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Diagnosis Result */}
+                  {diagnosisResult && (
+                    <div className="card-agricultural !p-5 border-r-4 border-r-green-500 animate-fade-in">
+                      <div className="flex items-center gap-2 mb-4">
+                        <CheckCircle className="w-6 h-6 text-green-600" />
+                        <h4 className="font-bold text-foreground text-lg">نتيجة التشخيص</h4>
+                      </div>
+                      <div className="prose prose-sm max-w-none text-right">
+                        {formatDiagnosis(diagnosisResult)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Diagnosis Error */}
+                  {diagnosisError && (
+                    <div className="card-agricultural !p-5 border-r-4 border-r-red-500">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertTriangle className="w-6 h-6 text-destructive" />
+                        <h4 className="font-bold text-foreground">خطأ في التشخيص</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground">{diagnosisError}</p>
+                      <button 
+                        onClick={() => analyzePest(uploadedImage)}
+                        className="mt-3 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-medium hover:bg-primary/90 transition-colors"
+                      >
+                        إعادة المحاولة
+                      </button>
+                    </div>
+                  )}
+
+                  {/* New Upload Button */}
+                  {!isAnalyzing && (diagnosisResult || diagnosisError) && (
+                    <button
+                      onClick={resetUpload}
+                      className="w-full py-3 border-2 border-dashed border-border rounded-xl text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+                    >
+                      رفع صورة جديدة
+                    </button>
+                  )}
+                </div>
+              ) : (
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-8 cursor-pointer hover:border-primary transition-colors">
+                  <Upload className="w-10 h-10 text-muted-foreground mb-3" />
+                  <p className="font-medium text-foreground">اضغط لرفع صورة</p>
+                  <p className="text-sm text-muted-foreground">JPG, PNG (حد أقصى 5MB)</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
               )}
             </div>
-          ) : (
-            <label className="flex flex-col items-center justify-center border-2 border-dashed border-border rounded-xl p-8 cursor-pointer hover:border-primary transition-colors">
-              <Upload className="w-10 h-10 text-muted-foreground mb-3" />
-              <p className="font-medium text-foreground">اضغط لرفع صورة</p>
-              <p className="text-sm text-muted-foreground">JPG, PNG (حد أقصى 5MB)</p>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-            </label>
-          )}
-        </div>
+          </TabsContent>
+        </Tabs>
 
         {/* Common Problems */}
         <h3 className="text-xl font-bold text-foreground mb-4">الأمراض والآفات الشائعة</h3>

@@ -1,1 +1,7 @@
 project_id = "ywaujxbzwalmudhmidpr"
+
+[functions.diagnose-pest]
+verify_jwt = false
+
+[functions.diagnose-symptoms]
+verify_jwt = false
