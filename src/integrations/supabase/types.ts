@@ -14,7 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          country: string | null
+          created_at: string
+          experience_level:
+            | Database["public"]["Enums"]["experience_level"]
+            | null
+          full_name: string | null
+          id: string
+          preferred_crops: string[] | null
+          profile_completed: boolean | null
+          region: string | null
+          soil_type: Database["public"]["Enums"]["soil_type"] | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          country?: string | null
+          created_at?: string
+          experience_level?:
+            | Database["public"]["Enums"]["experience_level"]
+            | null
+          full_name?: string | null
+          id?: string
+          preferred_crops?: string[] | null
+          profile_completed?: boolean | null
+          region?: string | null
+          soil_type?: Database["public"]["Enums"]["soil_type"] | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          country?: string | null
+          created_at?: string
+          experience_level?:
+            | Database["public"]["Enums"]["experience_level"]
+            | null
+          full_name?: string | null
+          id?: string
+          preferred_crops?: string[] | null
+          profile_completed?: boolean | null
+          region?: string | null
+          soil_type?: Database["public"]["Enums"]["soil_type"] | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +70,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      experience_level: "beginner" | "intermediate" | "expert"
+      soil_type: "sandy" | "clay" | "loam" | "silt" | "peat" | "chalky"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +198,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      experience_level: ["beginner", "intermediate", "expert"],
+      soil_type: ["sandy", "clay", "loam", "silt", "peat", "chalky"],
+    },
   },
 } as const
