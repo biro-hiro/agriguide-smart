@@ -1,8 +1,28 @@
-import { Search, Bell, Menu } from "lucide-react";
-import { useState } from "react";
+import { Search, Bell, Menu, LogIn, LogOut, User } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import type { User as SupaUser } from "@supabase/supabase-js";
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [user, setUser] = useState<SupaUser | null>(null);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-lg border-b border-border">
@@ -35,6 +55,28 @@ const Header = () => {
 
           {/* Actions */}
           <div className="flex items-center gap-2">
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="hidden sm:inline text-sm text-muted-foreground truncate max-w-[120px]">
+                  {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                </span>
+                <button
+                  onClick={handleSignOut}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-destructive-foreground bg-destructive/10 hover:bg-destructive/20 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span className="hidden sm:inline">خروج</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => navigate("/auth")}
+                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium text-primary-foreground gradient-primary shadow-soft hover:opacity-90 transition-opacity"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>دخول</span>
+              </button>
+            )}
             <button className="relative p-3 rounded-xl hover:bg-muted transition-colors">
               <Bell className="w-5 h-5 text-muted-foreground" />
               <span className="absolute top-2 right-2 w-2 h-2 bg-warning rounded-full"></span>
