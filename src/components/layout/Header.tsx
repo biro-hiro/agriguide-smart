@@ -57,9 +57,15 @@ const Header = () => {
           <div className="flex items-center gap-2">
             {user ? (
               <div className="flex items-center gap-2">
-                <span className="hidden sm:inline text-sm text-muted-foreground truncate max-w-[120px]">
-                  {user.user_metadata?.full_name || user.email?.split('@')[0]}
-                </span>
+                <button
+                  onClick={() => navigate("/profile")}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-foreground hover:bg-muted transition-colors"
+                >
+                  <User className="w-4 h-4" />
+                  <span className="hidden sm:inline truncate max-w-[100px]">
+                    {user.user_metadata?.full_name || user.email?.split('@')[0]}
+                  </span>
+                </button>
                 <button
                   onClick={handleSignOut}
                   className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-destructive-foreground bg-destructive/10 hover:bg-destructive/20 transition-colors"
