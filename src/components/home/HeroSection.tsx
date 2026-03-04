@@ -1,14 +1,13 @@
-import heroImage from "@/assets/hero-farm.jpg";
-
 const HeroSection = () => {
   return (
     <section className="relative overflow-hidden rounded-3xl mx-4 mt-4 shadow-elevated">
       {/* Background Image */}
       <div className="absolute inset-0">
         <img
-          src={heroImage}
-          alt="مزرعة خضراء"
+          src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=1200&q=80"
+          alt="مزرعة خضراء واسعة تحت أشعة الشمس"
           className="w-full h-full object-cover"
+          loading="eager"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/40 to-transparent"></div>
       </div>

@@ -1,32 +1,32 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Leaf, Camera, Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const onboardingSlides = [
   {
     id: 1,
-    icon: Leaf,
     title: "اكتشف عالم الزراعة",
     description: "دليلك الشامل للمحاصيل الموسمية والهجينة المناسبة لأرضك ومناخك",
-    gradient: "gradient-primary",
     bgColor: "from-primary/20 to-secondary/20",
+    image: "https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=800&q=80",
+    gradient: "gradient-primary",
   },
   {
     id: 2,
-    icon: Camera,
     title: "تشخيص ذكي بالصور",
     description: "ارفع صورة لمحصولك واحصل على تشخيص فوري للأمراض والآفات مع طرق العلاج",
-    gradient: "gradient-sunset",
     bgColor: "from-warning/20 to-accent/20",
+    image: "https://images.unsplash.com/photo-1574943320219-553eb213f72d?w=800&q=80",
+    gradient: "gradient-sunset",
   },
   {
     id: 3,
-    icon: Calendar,
     title: "تقويم زراعي ذكي",
     description: "تذكيرات بمواعيد الزراعة والري والتسميد والحصاد حسب موقعك ومحاصيلك",
-    gradient: "gradient-sky",
     bgColor: "from-blue-500/20 to-primary/20",
+    image: "https://images.unsplash.com/photo-1523348837708-15d4a09cfac2?w=800&q=80",
+    gradient: "gradient-sky",
   },
 ];
 
@@ -55,7 +55,6 @@ const OnboardingPage = () => {
   };
 
   const slide = onboardingSlides[currentSlide];
-  const Icon = slide.icon;
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${slide.bgColor} flex flex-col transition-all duration-500`}>
@@ -85,11 +84,14 @@ const OnboardingPage = () => {
 
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center px-8 text-center">
-        {/* Icon */}
-        <div
-          className={`w-32 h-32 ${slide.gradient} rounded-[2rem] flex items-center justify-center mb-8 shadow-lg animate-scale-in`}
-        >
-          <Icon className="w-16 h-16 text-primary-foreground" />
+        {/* Image */}
+        <div className="w-64 h-64 rounded-[2rem] overflow-hidden mb-8 shadow-lg animate-scale-in">
+          <img
+            src={slide.image}
+            alt={slide.title}
+            className="w-full h-full object-cover"
+            loading="eager"
+          />
         </div>
 
         {/* Text */}
