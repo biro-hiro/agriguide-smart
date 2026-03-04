@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight, Upload, Camera, AlertTriangle, Leaf, Bug, Loader2, CheckCircle, XCircle, MessageSquare, Send } from "lucide-react";
+import { ArrowRight, Upload, Camera, AlertTriangle, Leaf, Bug, Loader2, CheckCircle, XCircle, MessageSquare, Send, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/layout/Header";
@@ -93,6 +93,7 @@ const PestsPage = () => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [diagnosisResult, setDiagnosisResult] = useState<string | null>(null);
   const [diagnosisError, setDiagnosisError] = useState<string | null>(null);
+  const [isSendingReport, setIsSendingReport] = useState(false);
   const { toast } = useToast();
 
   // Symptoms-based diagnosis state
@@ -229,13 +230,52 @@ const PestsPage = () => {
     setSymptomsError(null);
   };
 
+  const sendReportToEmail = async () => {
+    setIsSendingReport(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+
+      const reportData = {
+        user_email: user?.email || "غير مسجل",
+        user_name: user?.user_metadata?.full_name || user?.email?.split("@")[0] || "مستخدم",
+        user_id: user?.id || null,
+        diagnosis_result_image: diagnosisResult || null,
+        diagnosis_result_symptoms: symptomsDiagnosis || null,
+        symptoms_input: symptoms || null,
+        crop_name: cropName || null,
+        timestamp: new Date().toISOString(),
+      };
+
+      const response = await fetch("https://hook.us2.make.com/clz2dw1qs524nbjhwqxj91ts5o5ab6i5", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(reportData),
+      });
+
+      if (!response.ok) throw new Error("Failed to send report");
+
+      toast({
+        title: "تم الإرسال بنجاح ✉️",
+        description: "Report sent to your email!",
+      });
+    } catch (error) {
+      console.error("Error sending report:", error);
+      toast({
+        title: "خطأ في الإرسال",
+        description: "حدث خطأ أثناء إرسال التقرير. حاول مرة أخرى.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSendingReport(false);
+    }
+  };
+
   const formatDiagnosis = (text: string) => {
-    // Split by numbered points or newlines and format
     return text.split(/\n/).map((line, index) => {
       const trimmedLine = line.trim();
       if (!trimmedLine) return null;
       
-      // Check if it's a numbered point
       const isNumberedPoint = /^\d+\./.test(trimmedLine);
       const isBoldTitle = /^[*#]+/.test(trimmedLine) || trimmedLine.endsWith(':');
       
@@ -385,6 +425,25 @@ const PestsPage = () => {
                     </div>
                   </div>
 
+                  {/* Send Report Button */}
+                  <Button
+                    onClick={sendReportToEmail}
+                    disabled={isSendingReport}
+                    className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                  >
+                    {isSendingReport ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        جاري الإرسال...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-5 h-5" />
+                        Send Report to Email
+                      </>
+                    )}
+                  </Button>
+
                   {/* New Diagnosis Button */}
                   <Button
                     onClick={resetSymptomsDiagnosis}
@@ -456,15 +515,34 @@ const PestsPage = () => {
 
                   {/* Diagnosis Result */}
                   {diagnosisResult && (
-                    <div className="card-agricultural !p-5 border-r-4 border-r-green-500 animate-fade-in">
-                      <div className="flex items-center gap-2 mb-4">
-                        <CheckCircle className="w-6 h-6 text-green-600" />
-                        <h4 className="font-bold text-foreground text-lg">نتيجة التشخيص</h4>
+                    <>
+                      <div className="card-agricultural !p-5 border-r-4 border-r-green-500 animate-fade-in">
+                        <div className="flex items-center gap-2 mb-4">
+                          <CheckCircle className="w-6 h-6 text-green-600" />
+                          <h4 className="font-bold text-foreground text-lg">نتيجة التشخيص</h4>
+                        </div>
+                        <div className="prose prose-sm max-w-none text-right">
+                          {formatDiagnosis(diagnosisResult)}
+                        </div>
                       </div>
-                      <div className="prose prose-sm max-w-none text-right">
-                        {formatDiagnosis(diagnosisResult)}
-                      </div>
-                    </div>
+                      <Button
+                        onClick={sendReportToEmail}
+                        disabled={isSendingReport}
+                        className="w-full gap-2 bg-accent text-accent-foreground hover:bg-accent/90"
+                      >
+                        {isSendingReport ? (
+                          <>
+                            <Loader2 className="w-5 h-5 animate-spin" />
+                            جاري الإرسال...
+                          </>
+                        ) : (
+                          <>
+                            <Mail className="w-5 h-5" />
+                            Send Report to Email
+                          </>
+                        )}
+                      </Button>
+                    </>
                   )}
 
                   {/* Diagnosis Error */}
