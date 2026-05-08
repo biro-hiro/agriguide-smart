@@ -165,6 +165,18 @@ const CommunityPage = () => {
           ))}
         </div>
       </main>
+      </PageTransition>
+
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={() => requireAuth(() => toast("اكتب مشاركتك في الأعلى"))}
+        className="fixed bottom-24 right-6 z-30 w-14 h-14 rounded-full gradient-primary text-primary-foreground shadow-2xl flex items-center justify-center"
+        aria-label="إنشاء منشور"
+      >
+        <Plus className="w-6 h-6" />
+      </motion.button>
+
+      <AuthSheet open={authOpen} onOpenChange={setAuthOpen} />
       <BottomNav />
     </div>
   );
