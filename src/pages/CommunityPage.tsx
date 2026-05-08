@@ -1,7 +1,12 @@
-import { useState } from "react";
-import { ArrowRight, MessageCircle, ThumbsUp, Send, User, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, MessageCircle, ThumbsUp, Send, User, Star, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
+import PageTransition from "@/components/PageTransition";
+import AuthSheet from "@/components/auth/AuthSheet";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const posts = [
   {
