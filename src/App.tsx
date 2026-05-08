@@ -63,33 +63,3 @@ const App = () => (
 );
 
 export default App;
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <OnboardingRedirect>
-          <Routes>
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/crops" element={<CropsPage />} />
-            <Route path="/pests" element={<ProtectedRoute><PestsPage /></ProtectedRoute>} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/community" element={<CommunityPage />} />
-            <Route path="/hybrid" element={<HybridPage />} />
-            <Route path="/tools" element={<ToolsPage />} />
-            <Route path="/environment" element={<EnvironmentPage />} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/tips" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </OnboardingRedirect>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
-
-export default App;
