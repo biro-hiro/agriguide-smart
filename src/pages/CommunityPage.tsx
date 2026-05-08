@@ -53,10 +53,30 @@ const posts = [
 
 const CommunityPage = () => {
   const [newPost, setNewPost] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setIsAuthed(!!session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setIsAuthed(!!s));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const requireAuth = (cb: () => void) => {
+    if (!isAuthed) { setAuthOpen(true); return; }
+    cb();
+  };
+
+  const handlePublish = () => requireAuth(() => {
+    if (!newPost.trim()) return;
+    toast.success("تم نشر مشاركتك");
+    setNewPost("");
+  });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header />
+      <PageTransition>
       <main className="max-w-3xl mx-auto px-4 py-6">
         {/* Page Title */}
         <div className="flex items-center gap-3 mb-6">
