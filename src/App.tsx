@@ -18,11 +18,51 @@ import ToolsPage from "./pages/ToolsPage";
 import EnvironmentPage from "./pages/EnvironmentPage";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
+import AutomationPage from "./pages/AutomationPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/crops" element={<CropsPage />} />
+        <Route path="/pests" element={<ProtectedRoute><PestsPage /></ProtectedRoute>} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/community" element={<CommunityPage />} />
+        <Route path="/hybrid" element={<HybridPage />} />
+        <Route path="/tools" element={<ToolsPage />} />
+        <Route path="/environment" element={<EnvironmentPage />} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/automation" element={<AutomationPage />} />
+        <Route path="/tips" element={<Index />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
+
 const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner position="top-center" richColors />
+      <BrowserRouter>
+        <OnboardingRedirect>
+          <AnimatedRoutes />
+        </OnboardingRedirect>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
+
+export default App;
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
