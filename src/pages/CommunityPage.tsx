@@ -103,7 +103,7 @@ const CommunityPage = () => {
                 className="input-agricultural resize-none h-20"
               />
               <div className="flex justify-end mt-3">
-                <button className="btn-primary-gradient flex items-center gap-2">
+                <button onClick={handlePublish} className="btn-primary-gradient flex items-center gap-2">
                   <Send className="w-4 h-4" />
                   نشر
                 </button>
