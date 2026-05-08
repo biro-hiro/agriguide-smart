@@ -2,7 +2,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, useLocation } from "react-router-dom";
+import { AnimatePresence } from "framer-motion";
 import OnboardingRedirect from "./components/OnboardingRedirect";
 import ProtectedRoute from "./components/ProtectedRoute";
 import OnboardingPage from "./pages/OnboardingPage";
@@ -17,34 +18,44 @@ import ToolsPage from "./pages/ToolsPage";
 import EnvironmentPage from "./pages/EnvironmentPage";
 import ProfilePage from "./pages/ProfilePage";
 import DashboardPage from "./pages/DashboardPage";
+import AutomationPage from "./pages/AutomationPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
+
+const AnimatedRoutes = () => {
+  const location = useLocation();
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/" element={<Index />} />
+        <Route path="/crops" element={<CropsPage />} />
+        <Route path="/pests" element={<ProtectedRoute><PestsPage /></ProtectedRoute>} />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/community" element={<CommunityPage />} />
+        <Route path="/hybrid" element={<HybridPage />} />
+        <Route path="/tools" element={<ToolsPage />} />
+        <Route path="/environment" element={<EnvironmentPage />} />
+        <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+        <Route path="/automation" element={<AutomationPage />} />
+        <Route path="/tips" element={<Index />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
-      <Sonner />
+      <Sonner position="top-center" richColors />
       <BrowserRouter>
         <OnboardingRedirect>
-          <Routes>
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/" element={<Index />} />
-            <Route path="/crops" element={<CropsPage />} />
-            <Route path="/pests" element={<ProtectedRoute><PestsPage /></ProtectedRoute>} />
-            <Route path="/calendar" element={<CalendarPage />} />
-            <Route path="/community" element={<CommunityPage />} />
-            <Route path="/hybrid" element={<HybridPage />} />
-            <Route path="/tools" element={<ToolsPage />} />
-            <Route path="/environment" element={<EnvironmentPage />} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
-            <Route path="/tips" element={<Index />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AnimatedRoutes />
         </OnboardingRedirect>
       </BrowserRouter>
     </TooltipProvider>

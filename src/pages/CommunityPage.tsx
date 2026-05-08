@@ -1,7 +1,12 @@
-import { useState } from "react";
-import { ArrowRight, MessageCircle, ThumbsUp, Send, User, Star } from "lucide-react";
+import { useEffect, useState } from "react";
+import { ArrowRight, MessageCircle, ThumbsUp, Send, User, Star, Plus } from "lucide-react";
+import { motion } from "framer-motion";
 import Header from "@/components/layout/Header";
 import BottomNav from "@/components/layout/BottomNav";
+import PageTransition from "@/components/PageTransition";
+import AuthSheet from "@/components/auth/AuthSheet";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const posts = [
   {
@@ -48,10 +53,30 @@ const posts = [
 
 const CommunityPage = () => {
   const [newPost, setNewPost] = useState("");
+  const [authOpen, setAuthOpen] = useState(false);
+  const [isAuthed, setIsAuthed] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => setIsAuthed(!!session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setIsAuthed(!!s));
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const requireAuth = (cb: () => void) => {
+    if (!isAuthed) { setAuthOpen(true); return; }
+    cb();
+  };
+
+  const handlePublish = () => requireAuth(() => {
+    if (!newPost.trim()) return;
+    toast.success("تم نشر مشاركتك");
+    setNewPost("");
+  });
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-background pb-24">
       <Header />
+      <PageTransition>
       <main className="max-w-3xl mx-auto px-4 py-6">
         {/* Page Title */}
         <div className="flex items-center gap-3 mb-6">
@@ -78,7 +103,7 @@ const CommunityPage = () => {
                 className="input-agricultural resize-none h-20"
               />
               <div className="flex justify-end mt-3">
-                <button className="btn-primary-gradient flex items-center gap-2">
+                <button onClick={handlePublish} className="btn-primary-gradient flex items-center gap-2">
                   <Send className="w-4 h-4" />
                   نشر
                 </button>
@@ -140,6 +165,18 @@ const CommunityPage = () => {
           ))}
         </div>
       </main>
+      </PageTransition>
+
+      <motion.button
+        whileTap={{ scale: 0.9 }}
+        onClick={() => requireAuth(() => toast("اكتب مشاركتك في الأعلى"))}
+        className="fixed bottom-24 right-6 z-30 w-14 h-14 rounded-full gradient-primary text-primary-foreground shadow-2xl flex items-center justify-center"
+        aria-label="إنشاء منشور"
+      >
+        <Plus className="w-6 h-6" />
+      </motion.button>
+
+      <AuthSheet open={authOpen} onOpenChange={setAuthOpen} />
       <BottomNav />
     </div>
   );
