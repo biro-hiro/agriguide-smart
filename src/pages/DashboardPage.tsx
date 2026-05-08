@@ -182,44 +182,7 @@ const DashboardPage = () => {
             </CardContent>
           </Card>
 
-          {/* Weather Widget */}
-          <Card className="shadow-soft overflow-hidden">
-            <div className="gradient-sky p-5 text-white" style={{ background: "var(--gradient-sky)" }}>
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm opacity-90">الطقس اليوم</p>
-                  <p className="text-4xl font-bold mt-1">26°</p>
-                  <p className="text-sm opacity-90 mt-1">مشمس جزئياً</p>
-                </div>
-                <Sun className="w-16 h-16 opacity-90" />
-              </div>
-            </div>
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <Droplets className="w-4 h-4" /> الرطوبة
-                </span>
-                <span className="font-medium text-foreground">62%</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <Wind className="w-4 h-4" /> الرياح
-                </span>
-                <span className="font-medium text-foreground">12 كم/س</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="flex items-center gap-2 text-muted-foreground">
-                  <Cloud className="w-4 h-4" /> هطول متوقع
-                </span>
-                <span className="font-medium text-foreground">10%</span>
-              </div>
-              <div className="pt-2 mt-2 border-t border-border">
-                <p className="text-xs text-muted-foreground">
-                  ☀️ ظروف مناسبة للري في الصباح الباكر.
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <WeatherWidget />
         </div>
 
         {/* Disease Analytics */}
