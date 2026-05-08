@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Activity, Bug, FileText, TrendingUp, Cloud, Droplets, Wind, Sun, Mail, Leaf, Calendar as CalendarIcon } from "lucide-react";
+import { Activity, Bug, FileText, TrendingUp, Mail, Leaf, Calendar as CalendarIcon } from "lucide-react";
+import WeatherWidget from "@/components/dashboard/WeatherWidget";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
